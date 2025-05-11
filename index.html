@@ -31,6 +31,8 @@
       overflow: hidden;
     }
 
+
+
     .chat-header {
       background-color: #075e54;
       color: white;
@@ -55,12 +57,16 @@
       border-radius: 8px;
       background-color: #dcf8c6;
       align-self: flex-end;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
     .bot-message {
       background-color: #ffffff;
       align-self: flex-start;
       border: 1px solid #ccc;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
     .chat-input {
@@ -131,7 +137,8 @@
       })
       .then(response => response.json())
       .then(data => {
-        typingMessage.textContent = data.body || '[Sem resposta]';
+        typingMessage.innerHTML = formatMessage(data.body || '[Sem resposta]');
+        console.log(data.body);
       })
       .catch(error => {
         console.error('Erro ao enviar mensagem:', error);
@@ -144,10 +151,26 @@
       const msgDiv = document.createElement('div');
       msgDiv.className = 'message';
       if (sender === 'bot') msgDiv.classList.add('bot-message');
-      msgDiv.textContent = message;
+
+      msgDiv.innerHTML = formatMessage(message);
       chat.appendChild(msgDiv);
       chat.scrollTop = chat.scrollHeight;
       return returnElement ? msgDiv : null;
+    }
+
+    function formatMessage(message) {
+      // Escapa HTML e aplica links
+      const escaped = message
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      const linkified = escaped.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+      );
+
+      return linkified;
     }
 
     function handleKeyPress(event) {
