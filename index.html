@@ -80,20 +80,12 @@
       word-wrap: break-word;
       box-shadow: 0 1px 1px rgba(0,0,0,0.1);
     }
-    
-    /* Estilo para parágrafos dentro das mensagens */
-    .message p {
-      margin: 0 0 0.5em 0;
-    }
-    .message p:last-child {
-      margin-bottom: 0;
-    }
 
     /* Mensagem do Usuário (Direita) */
     .user-message {
       background-color: #dcf8c6;
       align-self: flex-end;
-      border-radius: 8px 0 8px 8px; /* Cantos arredondados */
+      border-radius: 8px 0 8px 8px;
     }
 
     .user-message::after {
@@ -138,12 +130,6 @@
       padding: 8px 12px;
       background-color: #f0f0f0;
     }
-    
-    .chat-input .icon {
-        fill: #54656f;
-        cursor: pointer;
-        padding: 8px;
-    }
 
     .chat-input input {
       flex: 1;
@@ -181,7 +167,7 @@
     /* Responsividade para Telas Pequenas */
     @media (max-width: 600px) {
       body {
-        background-color: #e5ddd5; /* Mesma cor do chat para transição suave */
+        background-color: #e5ddd5;
       }
       .chat-container {
         height: 100vh;
@@ -215,7 +201,6 @@
     const userId = 'user_' + Math.random().toString(36).substring(2, 10);
     const endpointUrl = 'https://pqxdkz6e3k.execute-api.us-east-1.amazonaws.com/prd/';
 
-    // Adiciona uma mensagem de boas-vindas ao carregar
     window.onload = () => {
         addMessageToChat('Olá! Sou o agente virtual de Tauá. Como posso te ajudar hoje?', 'bot');
     };
@@ -243,7 +228,6 @@
       })
       .then(response => response.json())
       .then(data => {
-        // Remove a mensagem "Digitando..." antes de adicionar a resposta final
         typingMessage.remove();
         addMessageToChat(data.body || '[Sem resposta]', 'bot');
       })
@@ -271,35 +255,23 @@
     }
 
     /**
-     * Formata a mensagem para exibição segura e correta no HTML.
+     * Formata a mensagem para exibição segura no HTML.
+     * A API está retornando '\\n' como texto, então substituímos diretamente por <br>.
      */
     function formatMessage(message) {
-      // 1. Escapa caracteres HTML para evitar XSS.
-      const escapedMessage = message
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+      // 1. A CORREÇÃO PRINCIPAL:
+      // Substitui a sequência de caracteres literais '\\n' pela tag de quebra de linha <br>.
+      // As duas barras invertidas (\\) são necessárias para encontrar uma barra invertida literal na string.
+      let processedMessage = message.replace(/\\n/g, '<br>');
 
-      // 2. Divide a mensagem em parágrafos (usando uma ou mais linhas em branco como delimitador).
-      const paragraphs = escapedMessage.split(/\n\s*\n/);
-      
-      let htmlContent = paragraphs
-        // Processa cada parágrafo
-        .map(para => {
-          if (para.trim() === '') return '';
-          // Substitui quebras de linha únicas por <br> e envolve o parágrafo em <p>
-          return `<p>${para.replace(/\n/g, '<br>')}</p>`;
-        })
-        .join('');
-
-      // 3. Transforma URLs em links clicáveis.
+      // 2. Transforma URLs em links clicáveis (mantendo a funcionalidade anterior).
       const urlRegex = /(https?:\/\/[^\s<]+)/g;
-      htmlContent = htmlContent.replace(
+      processedMessage = processedMessage.replace(
         urlRegex,
         '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
       );
 
-      return htmlContent;
+      return processedMessage;
     }
 
     function handleKeyPress(event) {
