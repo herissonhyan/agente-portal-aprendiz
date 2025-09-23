@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Agente Guia Tauá</title>
+  <title>Agente - Guia Tauá</title>
   <style>
     /* Reset e Configurações Globais */
     * {
@@ -79,6 +79,14 @@
       white-space: pre-wrap;
       word-wrap: break-word;
       box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    }
+    
+    /* Estilo para parágrafos dentro das mensagens */
+    .message p {
+      margin: 0 0 0.5em 0;
+    }
+    .message p:last-child {
+      margin-bottom: 0;
     }
 
     /* Mensagem do Usuário (Direita) */
@@ -192,13 +200,11 @@
   <div class="chat-container">
     <div class="chat-header">
       <div class="avatar"></div>
-      <div class="chat-info">Atendente - Portal do Aprendiz</div>
+      <div class="chat-info">Agente - Guia Tauá</div>
     </div>
     <div class="chat-messages" id="chat-messages"></div>
     <div class="chat-input">
-        <svg viewBox="0 0 24 24" height="24" width="24" class="icon"><path d="M9.153,11.603c0.795,0,1.439-0.879,1.439-1.962s-0.644-1.962-1.439-1.962s-1.439,0.879-1.439,1.962S8.358,11.603,9.153,11.603 M14.846,11.603c0.795,0,1.439-0.879,1.439-1.962s-0.644-1.962-1.439-1.962s-1.439,0.879-1.439,1.962S14.051,11.603,14.846,11.603 M12,2C6.477,2,2,6.477,2,12s4.477,10,10,10s10-4.477,10-10S17.523,2,12,2 M12,20c-4.411,0-8-3.589-8-8s3.589-8,8-8s8,3.589,8,8S16.411,20,12,20 M12,17.25c-2.331,0-4.455-1.121-5.875-2.915c-0.198-0.26-0.01-0.621,0.28-0.621h11.19c0.29,0,0.478,0.361,0.28,0.621C16.455,16.129,14.331,17.25,12,17.25"></path></svg>
       <input type="text" id="messageInput" placeholder="Digite uma mensagem..." onkeypress="handleKeyPress(event)" />
-      <svg viewBox="0 0 24 24" height="24" width="24" class="icon"><path d="M16.5,6V20A2.5,2.5 0 0,1 14,22.5A2.5,2.5 0 0,1 11.5,20V5.5A1,1 0 0,1 12.5,4.5A1,1 0 0,1 13.5,5.5V18.5H12V5.5A2.5,2.5 0 0,0 9.5,3A2.5,2.5 0 0,0 7,5.5V19C0,19 0,22 4,22C8,22 8,19 8,19V6H16.5Z"></path></svg>
       <button class="send-button" onclick="sendMessage()">
         <svg viewBox="0 0 24 24" height="24" width="24" class="icon"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
       </button>
@@ -209,6 +215,11 @@
     const userId = 'user_' + Math.random().toString(36).substring(2, 10);
     const endpointUrl = 'https://pqxdkz6e3k.execute-api.us-east-1.amazonaws.com/prd/';
 
+    // Adiciona uma mensagem de boas-vindas ao carregar
+    window.onload = () => {
+        addMessageToChat('Olá! Sou o agente virtual de Tauá. Como posso te ajudar hoje?', 'bot');
+    };
+
     function sendMessage() {
       const input = document.getElementById('messageInput');
       const message = input.value.trim();
@@ -216,6 +227,7 @@
 
       addMessageToChat(message, 'user');
       input.value = '';
+      input.focus();
 
       const typingMessage = addMessageToChat('Digitando...', 'bot', true);
 
@@ -231,11 +243,13 @@
       })
       .then(response => response.json())
       .then(data => {
-        typingMessage.innerHTML = formatMessage(data.body || '[Sem resposta]');
+        // Remove a mensagem "Digitando..." antes de adicionar a resposta final
+        typingMessage.remove();
+        addMessageToChat(data.body || '[Sem resposta]', 'bot');
       })
       .catch(error => {
         console.error('Erro ao enviar mensagem:', error);
-        typingMessage.textContent = '[Erro ao obter resposta]';
+        typingMessage.innerHTML = formatMessage('[Erro ao obter resposta]');
       });
     }
 
@@ -243,7 +257,6 @@
       const chat = document.getElementById('chat-messages');
       const msgDiv = document.createElement('div');
       
-      // Define a classe base e a classe específica do remetente
       msgDiv.className = 'message';
       if (sender === 'bot') {
         msgDiv.classList.add('bot-message');
@@ -253,31 +266,40 @@
 
       msgDiv.innerHTML = formatMessage(message);
       chat.appendChild(msgDiv);
-      chat.scrollTop = chat.scrollHeight; // Rola para a mensagem mais recente
+      chat.scrollTop = chat.scrollHeight;
       return returnElement ? msgDiv : null;
     }
 
     /**
-     * Formata a mensagem para exibição segura no HTML.
-     * 1. Escapa caracteres HTML para evitar XSS.
-     * 2. Converte quebras de linha (\n) em tags <br> para formatação de parágrafos.
-     * 3. Transforma URLs em links clicáveis.
+     * Formata a mensagem para exibição segura e correta no HTML.
      */
     function formatMessage(message) {
-      // 1. Escapa HTML
-      let formattedMessage = message
+      // 1. Escapa caracteres HTML para evitar XSS.
+      const escapedMessage = message
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
-      // 2. Converte \n para <br>
-      formattedMessage = formattedMessage.replace(/\n/g, '<br>');
+      // 2. Divide a mensagem em parágrafos (usando uma ou mais linhas em branco como delimitador).
+      const paragraphs = escapedMessage.split(/\n\s*\n/);
+      
+      let htmlContent = paragraphs
+        // Processa cada parágrafo
+        .map(para => {
+          if (para.trim() === '') return '';
+          // Substitui quebras de linha únicas por <br> e envolve o parágrafo em <p>
+          return `<p>${para.replace(/\n/g, '<br>')}</p>`;
+        })
+        .join('');
 
-      // 3. Detecta e cria links
+      // 3. Transforma URLs em links clicáveis.
       const urlRegex = /(https?:\/\/[^\s<]+)/g;
-      formattedMessage = formattedMessage.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+      htmlContent = htmlContent.replace(
+        urlRegex,
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+      );
 
-      return formattedMessage;
+      return htmlContent;
     }
 
     function handleKeyPress(event) {
